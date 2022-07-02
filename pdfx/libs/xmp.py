@@ -41,13 +41,13 @@ class XmpParser(object):
 
     def __init__(self, xmp):
         self.tree = ET.XML(xmp)
-        self.rdftree = self.tree.find(RDF_NS + "RDF")
+        self.rdftree = self.tree.find(f"{RDF_NS}RDF")
 
     @property
     def meta(self):
         """ A dictionary of all the parsed metadata. """
         meta = defaultdict(dict)
-        for desc in self.rdftree.findall(RDF_NS + "Description"):
+        for desc in self.rdftree.findall(f"{RDF_NS}Description"):
             for (
                 el
             ) in (
@@ -68,23 +68,20 @@ class XmpParser(object):
                 ns = NS_MAP[ns]
         return ns, tag
 
-    def _parse_value(self, el):  # noqa: C901
+    def _parse_value(self, el):    # noqa: C901
         """ Extract the metadata value from an element. """
-        if el.find(RDF_NS + "Bag") is not None:
-            value = []
-            for li in el.findall(RDF_NS + "Bag/" + RDF_NS + "li"):
-                value.append(li.text)
-        elif el.find(RDF_NS + "Seq") is not None:
-            value = []
-            for li in el.findall(RDF_NS + "Seq/" + RDF_NS + "li"):
-                value.append(li.text)
-        elif el.find(RDF_NS + "Alt") is not None:
-            value = {}
-            for li in el.findall(RDF_NS + "Alt/" + RDF_NS + "li"):
-                value[li.get(XML_NS + "lang")] = li.text
+        if el.find(f"{RDF_NS}Bag") is not None:
+            return [li.text for li in el.findall(f"{RDF_NS}Bag/{RDF_NS}li")]
+        elif el.find(f"{RDF_NS}Seq") is not None:
+            return [li.text for li in el.findall(f"{RDF_NS}Seq/{RDF_NS}li")]
+        elif el.find(f"{RDF_NS}Alt") is not None:
+            return {
+                li.get(f"{XML_NS}lang"): li.text
+                for li in el.findall(f"{RDF_NS}Alt/{RDF_NS}li")
+            }
+
         else:
-            value = el.text
-        return value
+            return el.text
 
 
 def xmp_to_dict(xmp):

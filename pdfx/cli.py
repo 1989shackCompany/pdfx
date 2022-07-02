@@ -4,6 +4,7 @@
 Command line tool to get metadata and URLs from a local or remote PDF,
 and optionally download all referenced PDFs.
 """
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import sys
@@ -16,19 +17,14 @@ from pdfx.downloader import check_refs
 
 
 IS_PY2 = sys.version_info < (3, 0)
-if IS_PY2:
-    # Python 2
-    parse_str = unicode  # noqa: F821
-else:
-    # Python 3
-    parse_str = str
+parse_str = unicode if IS_PY2 else str
 
 # print(sys.version)
 # print("stdout encoding: %s" % sys.stdout.encoding)
 
 
 def exit_with_error(code, *objs):
-    print("ERROR %s:" % code, *objs, file=sys.stderr)
+    print(f"ERROR {code}:", *objs, file=sys.stderr)
     exit(code)
 
 
@@ -99,9 +95,7 @@ def create_parser():
 
 def get_text_output(pdf, args):
     """ Normal output of infos of PDFx instance """
-    # Metadata
-    ret = ""
-    ret += "Document infos:\n"
+    ret = "" + "Document infos:\n"
     for k, v in sorted(pdf.get_metadata().items()):
         if v:
             ret += "- %s = %s\n" % (k, parse_str(v).strip("/"))
@@ -120,12 +114,11 @@ def get_text_output(pdf, args):
                 ret += "- %s\n" % ref
         elif ref_cnt:
             ret += "\nTip: You can use the '-v' flag to see all references\n"
-    else:
-        if ref_cnt:
-            for reftype in refs:
-                ret += "\n%s References:\n" % reftype.upper()
-                for ref in refs[reftype]:
-                    ret += "- %s\n" % ref
+    elif ref_cnt:
+        for reftype in refs:
+            ret += "\n%s References:\n" % reftype.upper()
+            for ref in refs[reftype]:
+                ret += "- %s\n" % ref
 
     return ret.strip()
 
@@ -179,24 +172,16 @@ def main():
     if args.json:
         # in JSON format
         text = json.dumps(pdf.summary, indent=4)
-        if args.output_file:
-            # to file (in utf-8)
-            with codecs.open(args.output_file, "w", "utf-8") as f:
-                f.write(text)
-        else:
-            # to console
-            print_to_console(text)
     else:
         # in text format
         text = get_text_output(pdf, args)
-        if args.output_file:
-            # to file (in utf-8)
-            with codecs.open(args.output_file, "w", "utf-8") as f:
-                f.write(text)
-        else:
-            # to console
-            print_to_console(text)
-
+    if args.output_file:
+        # to file (in utf-8)
+        with codecs.open(args.output_file, "w", "utf-8") as f:
+            f.write(text)
+    else:
+        # to console
+        print_to_console(text)
     if args.check_links:
         refs_all = pdf.get_references()
         refs = [ref for ref in refs_all if ref.reftype in ["url", "pdf"]]

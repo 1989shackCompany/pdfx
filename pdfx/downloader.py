@@ -32,7 +32,7 @@ else:
 def sanitize_url(url):
     """ Make sure this url works with urllib2 (ascii, http, etc) """
     if url and not url.startswith("http"):
-        url = "http://%s" % url
+        url = f"http://{url}"
     url = url.encode("ascii", "ignore").decode("utf-8")
     return url
 
@@ -68,9 +68,9 @@ def check_refs(refs, verbose=True, max_threads=MAX_THREADS_DEFAULT):
         codes[status_code].append(ref)
         if verbose:
             if status_code == "200":
-                colorprint(OKGREEN, "%s - %s" % (status_code, url))
+                colorprint(OKGREEN, f"{status_code} - {url}")
             else:
-                colorprint(FAIL, "%s - %s" % (status_code, url))
+                colorprint(FAIL, f"{status_code} - {url}")
 
     # Start a threadpool and add the check-url tasks
     try:

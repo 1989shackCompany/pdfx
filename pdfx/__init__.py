@@ -99,7 +99,7 @@ class PDFx(object):
         Open PDF handle and parse PDF metadata
         - `uri` can bei either a filename or an url
         """
-        logger.debug("Init with uri: %s" % uri)
+        logger.debug(f"Init with uri: {uri}")
 
         self.uri = uri
 
@@ -127,18 +127,10 @@ class PDFx(object):
         try:
             self.reader = PDFMinerBackend(self.stream)
         except PDFSyntaxError as e:
-            raise PDFInvalidError("Invalid PDF (%s)" % unicode(e))
+            raise PDFInvalidError(f"Invalid PDF ({unicode(e)})")
 
-            # Could try to create a TextReader
-            logger.info(unicode(e))
-            logger.info("Trying to create a TextReader backend...")
-            self.stream.seek(0)
-            self.reader = TextBackend(self.stream)
-            self.is_pdf = False
         except Exception as e:
             raise
-            raise PDFInvalidError("Invalid PDF (%s)" % unicode(e))
-
         # Save metadata to user-supplied directory
         self.summary = {
             "source": {
@@ -173,7 +165,7 @@ class PDFx(object):
         return len(r)
 
     def download_pdfs(self, target_dir):
-        logger.debug("Download pdfs to %s" % target_dir)
+        logger.debug(f"Download pdfs to {target_dir}")
         assert target_dir, "Need a download directory"
         assert not os.path.isfile(target_dir), "Download directory is a file"
 
@@ -189,7 +181,7 @@ class PDFx(object):
             shutil.copyfileobj(self.stream, f)
         logger.debug("- Saved original pdf as '%s'" % fn)
 
-        fn_json = "%s.infos.json" % fn
+        fn_json = f"{fn}.infos.json"
         with open(fn_json, "w") as f:
             f.write(json.dumps(self.summary, indent=2))
         logger.debug("- Saved metadata to '%s'" % fn_json)
@@ -199,8 +191,8 @@ class PDFx(object):
         if not urls:
             return
 
-        dir_referenced_pdfs = os.path.join(target_dir, "%s-referenced-pdfs" % self.fn)
-        logger.debug("Downloading %s referenced pdfs..." % len(urls))
+        dir_referenced_pdfs = os.path.join(target_dir, f"{self.fn}-referenced-pdfs")
+        logger.debug(f"Downloading {len(urls)} referenced pdfs...")
 
         # Download urls as a set to avoid duplicates
         download_urls(urls, dir_referenced_pdfs)

@@ -65,10 +65,8 @@ def make_compat_str(in_str):
     out_str = in_str.decode(enc["encoding"])
 
     # Cleanup
-    if enc["encoding"] == "UTF-16BE":
-        # Remove byte order marks (BOM)
-        if out_str.startswith("\ufeff"):
-            out_str = out_str[1:]
+    if enc["encoding"] == "UTF-16BE" and out_str.startswith("\ufeff"):
+        out_str = out_str[1:]
     return out_str
 
 
@@ -91,15 +89,12 @@ class Reference(object):
             self.reftype = "pdf"
             return
 
-        # Detect reftype by extractor
-        arxiv = extractor.extract_arxiv(uri)
-        if arxiv:
+        if arxiv := extractor.extract_arxiv(uri):
             self.ref = arxiv.pop()
             self.reftype = "arxiv"
             return
 
-        doi = extractor.extract_doi(uri)
-        if doi:
+        if doi := extractor.extract_doi(uri):
             self.ref = doi.pop()
             self.reftype = "doi"
             return
@@ -112,7 +107,7 @@ class Reference(object):
         return self.ref == other.ref
 
     def __str__(self):
-        return "<%s: %s>" % (self.reftype, self.ref)
+        return f"<{self.reftype}: {self.ref}>"
 
 
 class ReaderBackend(object):
@@ -166,14 +161,14 @@ class ReaderBackend(object):
     def get_references(self, reftype=None, sort=False):
         refs = self.references
         if reftype:
-            refs = set([ref for ref in refs if ref.reftype == "pdf"])
+            refs = {ref for ref in refs if ref.reftype == "pdf"}
         return sorted(refs) if sort else refs
 
     def get_references_as_dict(self, reftype=None, sort=False):
         ret = {}
         refs = self.references
         if reftype:
-            refs = set([ref for ref in refs if ref.reftype == "pdf"])
+            refs = {ref for ref in refs if ref.reftype == "pdf"}
         for r in sorted(refs) if sort else refs:
             if r.reftype in ret:
                 ret[r.reftype].append(r.ref)
@@ -233,8 +228,7 @@ class PDFMinerBackend(ReaderBackend):
             # Collect URL annotations
             # try:
             if page.annots:
-                refs = self.resolve_PDFObjRef(page.annots)
-                if refs:
+                if refs := self.resolve_PDFObjRef(page.annots):
                     if isinstance(refs, list):
                         for ref in refs:
                             if ref:
@@ -242,8 +236,8 @@ class PDFMinerBackend(ReaderBackend):
                     elif isinstance(refs, Reference):
                         self.references.add(refs)
 
-            # except Exception as e:
-            # logger.warning(str(e))
+                # except Exception as e:
+                # logger.warning(str(e))
 
         # Remove empty metadata entries
         self.metadata_cleanup()
@@ -283,18 +277,14 @@ class PDFMinerBackend(ReaderBackend):
             obj_resolved = obj_resolved.decode("utf-8")
 
         if isinstance(obj_resolved, (str, unicode)):
-            if IS_PY2:
-                ref = obj_resolved.decode("utf-8")
-            else:
-                ref = obj_resolved
+            ref = obj_resolved.decode("utf-8") if IS_PY2 else obj_resolved
             return Reference(ref, self.curpage)
 
         if isinstance(obj_resolved, list):
             return [self.resolve_PDFObjRef(o) for o in obj_resolved]
 
-        if "URI" in obj_resolved:
-            if isinstance(obj_resolved["URI"], PDFObjRef):
-                return self.resolve_PDFObjRef(obj_resolved["URI"])
+        if "URI" in obj_resolved and isinstance(obj_resolved["URI"], PDFObjRef):
+            return self.resolve_PDFObjRef(obj_resolved["URI"])
 
         if "A" in obj_resolved:
             if isinstance(obj_resolved["A"], PDFObjRef):
