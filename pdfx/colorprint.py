@@ -19,4 +19,4 @@ ENDC = "\033[0m"
 
 
 def colorprint(color, s):
-    print("%s%s%s" % (color, s, ENDC))
+    print(f"{color}{s}{ENDC}")
